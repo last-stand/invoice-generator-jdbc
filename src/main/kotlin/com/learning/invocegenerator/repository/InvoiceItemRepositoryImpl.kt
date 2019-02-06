@@ -1,11 +1,11 @@
-package com.learning.invocegenerator.service
+package com.learning.invocegenerator.repository
 
 import com.learning.invocegenerator.`custom-db-util`.CustomH2JDBC
 import com.learning.invocegenerator.models.InvoiceItem
-import org.springframework.stereotype.Service
+import org.springframework.stereotype.Repository
 
-@Service
-class InvoiceItemServiceImpl : InvoiceItemService {
+@Repository
+class InvoiceItemRepositoryImpl : InvoiceItemRepository {
 
     override fun save(invoiceItem: InvoiceItem): Int {
         val sql = "INSERT INTO INVOICE_ITEM(invoice_item_id, product_id, quantity)" +

@@ -1,7 +1,7 @@
-package com.learning.invocegenerator.service
+package com.learning.invocegenerator.repository
 
 import com.learning.invocegenerator.models.InvoiceItem
 
-interface InvoiceItemService {
+interface InvoiceItemRepository {
     fun save(invoiceItem: InvoiceItem): Int
 }

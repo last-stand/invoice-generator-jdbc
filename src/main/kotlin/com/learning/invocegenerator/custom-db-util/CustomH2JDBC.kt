@@ -38,7 +38,7 @@ class CustomH2JDBC {
                 statement.close()
                 connection.close()
             }
-            return resultSet;
+            return resultSet
         }
 
         fun executeUpdateStatement(sql: String): Any {
@@ -59,7 +59,7 @@ class CustomH2JDBC {
                 statement.close()
                 connection.close()
             }
-            return result;
+            return result
         }
     }
 

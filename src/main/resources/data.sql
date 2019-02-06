@@ -9,3 +9,11 @@ INSERT INTO INVOICE_ITEM(quantity, product_id, invoice_item_id) VALUES(2 , 1, 1)
 INSERT INTO INVOICE_ITEM(quantity, product_id, invoice_item_id) VALUES(4 , 2, 1);
 
 INSERT INTO INVOICE_ITEM(quantity, product_id, invoice_item_id) VALUES(10 , 3, 2);
+
+-- SELECT *
+-- FROM invoice
+-- INNER JOIN invoice_item
+--       ON invoice.id=invoice_item.invoice_item_id
+-- INNER JOIN product
+--       ON invoice_item.product_id=product.id
+-- where invoice_item.invoice_item_id = 3
