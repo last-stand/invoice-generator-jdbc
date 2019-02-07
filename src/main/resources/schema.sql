@@ -21,11 +21,3 @@ CREATE TABLE INVOICE_ITEM(
   CONSTRAINT fk_product_id foreign key (product_id) references PRODUCT(id),
   CONSTRAINT fk_invoice_id foreign key (invoice_item_id) references INVOICE(id)
 );
-
--- ALTER TABLE INVOICE_ITEM
---     ADD CONSTRAINT fk_product_id FOREIGN KEY (product_id)
---     REFERENCES PRODUCT(id);
---
--- ALTER TABLE INVOICE_ITEM
---     ADD CONSTRAINT fk_invoice_id FOREIGN KEY (invoice_item_id)
---     REFERENCES INVOICE(id);

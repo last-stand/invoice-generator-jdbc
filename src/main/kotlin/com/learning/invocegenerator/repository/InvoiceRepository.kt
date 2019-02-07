@@ -1,4 +1,4 @@
-package com.learning.invocegenerator.Service
+package com.learning.invocegenerator.repository
 
 import com.learning.invocegenerator.models.Invoice
 import com.learning.invocegenerator.models.InvoiceItem
@@ -6,12 +6,12 @@ import com.learning.invocegenerator.models.Product
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.jdbc.core.JdbcTemplate
 import org.springframework.jdbc.core.RowMapper
-import org.springframework.stereotype.Service
+import org.springframework.stereotype.Repository
 import java.sql.ResultSet
 import java.sql.SQLException
 
-@Service
-class InvoiceService {
+@Repository
+class InvoiceRepository {
     @Autowired
     lateinit var jdbcTemplate: JdbcTemplate
 
