@@ -6,13 +6,13 @@ import org.springframework.web.bind.annotation.*
 
 @RestController
 @CrossOrigin(origins = arrayOf("http://localhost:3000"), maxAge = 3000)
-@RequestMapping("/api/invoice")
+@RequestMapping(value = arrayOf("","/api/invoice"))
 class InvoiceController{
 
     @Autowired
     lateinit var invoiceService: InvoiceService
 
-    @GetMapping("/")
+    @GetMapping(path = arrayOf("", "/"))
     fun getAllInvoices() =
             invoiceService.findAll()
 
