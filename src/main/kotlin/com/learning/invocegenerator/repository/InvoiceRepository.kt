@@ -19,10 +19,12 @@ class InvoiceRepository {
         @Throws(SQLException::class)
         override fun mapRow(resultSet: ResultSet, rowNum: Int): Invoice {
             val product = Product(
+                    id = resultSet.getInt("product_id"),
                     name = resultSet.getString("product"),
                     unitPrice = resultSet.getDouble("unit_price")
             )
             val invoiceItem =  InvoiceItem(
+                    id = resultSet.getInt("invoice_item_id"),
                     product = product,
                     quantity = resultSet.getInt("quantity")
 
@@ -39,7 +41,8 @@ class InvoiceRepository {
 
     fun findAll(): List<Invoice> {
         val sql = "SELECT invoice.id as invoice_id, invoice.customer," +
-                "product.name as product, product.unit_price, invoice_item.quantity, invoice.date " +
+                "product.id as product_id, product.name as product, product.unit_price, " +
+                "invoice_item.id as invoice_item_id, invoice_item.quantity, invoice.date " +
                 "FROM invoice " +
                 "INNER JOIN invoice_item " +
                 "ON invoice.id=invoice_item.invoice_item_id " +
@@ -50,7 +53,8 @@ class InvoiceRepository {
 
     fun findById(id: Int): List<Invoice> {
         val sql = "SELECT invoice.id as invoice_id, invoice.customer, " +
-                "product.name as product, product.unit_price, invoice_item.quantity, invoice.date " +
+                "product.id as product_id, product.name as product, product.unit_price, " +
+                "invoice_item.id as invoice_item_id, invoice_item.quantity, invoice.date " +
                 "FROM invoice " +
                 "INNER JOIN invoice_item " +
                 "ON invoice.id=invoice_item.invoice_item_id " +
