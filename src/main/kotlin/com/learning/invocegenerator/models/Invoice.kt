@@ -8,7 +8,7 @@ data class Invoice(
 
     val customer: String,
 
-    val invoiceItem: Set<InvoiceItem>,
+    val invoiceItem: MutableSet<InvoiceItem>,
 
     val date: String = LocalDateTime.now().format(DateTimeFormatter.ofPattern("dd-MMM-yyyy HH:mm:ss"))
 
