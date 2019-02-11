@@ -11,6 +11,7 @@ import org.springframework.jdbc.core.RowMapper
 import org.springframework.stereotype.Repository
 import java.sql.ResultSet
 import java.sql.SQLException
+import java.util.*
 
 @Repository
 class InvoiceRepository {
@@ -41,7 +42,8 @@ class InvoiceRepository {
 
         @Throws(SQLException::class)
         override fun mapRow(resultSet: ResultSet, rowNum: Int): Invoice {
-            val invoiceItem = InvoiceItemRowMapper().mapRow(resultSet, rowNum)
+            val invoiceItemRowMapper = InvoiceItemRowMapper()
+            val invoiceItem = invoiceItemRowMapper.mapRow(resultSet, rowNum)
             val invoiceItemList = mutableSetOf(invoiceItem)
             return Invoice(id= resultSet.getInt("invoice_id"),
                     customer = resultSet.getString("customer"),
@@ -57,23 +59,27 @@ class InvoiceRepository {
         @Throws(SQLException::class, DataAccessException::class)
         override fun extractData(resultSet: ResultSet): List<Invoice> {
             var invoiceList = arrayListOf<Invoice>()
-            var currentInvoice: Invoice? = null
-            var invoiceItem: InvoiceItem? = null
-            var invoiceId: Int = -1
+            val invoiceRowMapper = InvoiceRowMapper()
+            val invoiceItemRowMapper = InvoiceItemRowMapper()
             var row = 0
             while (resultSet.next()) {
-                if(currentInvoice == null || !invoiceId.equals(resultSet.getInt("invoice_id"))) {
-                    invoiceId = resultSet.getInt("invoice_id")
-                    currentInvoice = InvoiceRowMapper().mapRow(resultSet, row++)
-                    invoiceList.add(currentInvoice)
+                val invoiceId = resultSet.getInt("invoice_id")
+                val invoice = getInvoiceFromListById(invoiceList, invoiceId)
+                if(invoice == null) {
+                    invoiceList.add(invoiceRowMapper.mapRow(resultSet, row++))
                 }
                 else {
-                    invoiceItem = InvoiceItemRowMapper().mapRow(resultSet, row++)
-                    currentInvoice.invoiceItem.add(invoiceItem)
+                    invoice.invoiceItem.add(invoiceItemRowMapper.mapRow(resultSet, row++))
                 }
             }
             return invoiceList
         }
+    }
+
+    fun getInvoiceFromListById(invoiceList: ArrayList<Invoice>, invoiceId: Int): Invoice? {
+       return invoiceList.stream().filter({ obj ->
+            obj.id.equals(invoiceId)
+        }).findFirst().orElse(null)
     }
 
     fun findAll(): List<Invoice> {
@@ -84,7 +90,8 @@ class InvoiceRepository {
                 "INNER JOIN invoice_item " +
                 "ON invoice.id=invoice_item.invoice_item_id " +
                 "INNER JOIN product " +
-                "ON invoice_item.product_id=product.id"
+                "ON invoice_item.product_id=product.id " +
+                "ORDER BY invoice.id"
         return jdbcTemplate.query(sql, InvoiceResultSetExtractor())!!
     }
 
@@ -97,7 +104,7 @@ class InvoiceRepository {
                 "ON invoice.id=invoice_item.invoice_item_id " +
                 "INNER JOIN product " +
                 "ON invoice_item.product_id=product.id " +
-                "where invoice_item.invoice_item_id = ?"
+                "WHERE invoice_item.invoice_item_id = ?"
         return jdbcTemplate.query(sql, arrayOf(id), InvoiceResultSetExtractor())!!
     }
 }

@@ -18,5 +18,5 @@ class InvoiceController{
 
     @GetMapping("/{id}")
     fun getInvoiceById(@PathVariable id: Int) =
-            invoiceRepository.findById(id).get(0)
+            invoiceRepository.findById(id)
 }
