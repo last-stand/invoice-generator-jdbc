@@ -1,9 +1,9 @@
 package com.learning.invocegenerator.models
 
 class InvoiceItem (
-    var id: Int = 0,
+        var invoiceItemId: Int = 0,
 
-    val product: Product,
+        val product: Product,
 
-    val quantity: Int
+        val quantity: Int
 )

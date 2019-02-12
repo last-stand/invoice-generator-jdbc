@@ -77,34 +77,40 @@ class InvoiceRepository {
     }
 
     fun getInvoiceFromListById(invoiceList: ArrayList<Invoice>, invoiceId: Int): Invoice? {
-       return invoiceList.stream().filter({ obj ->
-            obj.id.equals(invoiceId)
-        }).findFirst().orElse(null)
+       return invoiceList.filter({ obj ->
+            obj.invoiceId == invoiceId
+        }).firstOrNull()
     }
 
     fun findAll(): List<Invoice> {
-        val sql = "SELECT invoice.id as invoice_id, invoice.customer," +
-                "product.id as product_id, product.name as product, product.unit_price, " +
-                "invoice_item.id as invoice_item_id, invoice_item.quantity, invoice.date " +
-                "FROM invoice " +
-                "INNER JOIN invoice_item " +
-                "ON invoice.id=invoice_item.invoice_item_id " +
-                "INNER JOIN product " +
-                "ON invoice_item.product_id=product.id " +
-                "ORDER BY invoice.id"
+        val sql = "SELECT invoice.invoice_id, invoice.customer, invoice.date, " +
+        "product.product_id, product.name as product, product.unit_price, " +
+        "invoice_item.invoice_item_id, invoice_item.quantity, " +
+        "tax.tax_type, tax.rate " +
+        "FROM invoice " +
+        "   INNER JOIN invoice_item " +
+        "ON invoice.invoice_id=invoice_item.invoice_id " +
+        "   INNER JOIN product " +
+        "ON invoice_item.product_id=product.product_id " +
+        "   INNER JOIN tax " +
+        "ON tax.product_id = product.product_id " +
+        "   ORDER BY invoice.invoice_id"
         return jdbcTemplate.query(sql, InvoiceResultSetExtractor())!!
     }
 
     fun findById(id: Int): List<Invoice> {
-        val sql = "SELECT invoice.id as invoice_id, invoice.customer, " +
-                "product.id as product_id, product.name as product, product.unit_price, " +
-                "invoice_item.id as invoice_item_id, invoice_item.quantity, invoice.date " +
+        val sql = "SELECT invoice.invoice_id, invoice.customer, invoice.date, " +
+                "product.product_id, product.name as product, product.unit_price, " +
+                "invoice_item.invoice_item_id, invoice_item.quantity, " +
+                "tax.tax_type, tax.rate " +
                 "FROM invoice " +
-                "INNER JOIN invoice_item " +
-                "ON invoice.id=invoice_item.invoice_item_id " +
-                "INNER JOIN product " +
-                "ON invoice_item.product_id=product.id " +
-                "WHERE invoice_item.invoice_item_id = ?"
+                "   INNER JOIN invoice_item " +
+                "ON invoice.invoice_id=invoice_item.invoice_id " +
+                "   INNER JOIN product " +
+                "ON invoice_item.product_id=product.product_id " +
+                "   INNER JOIN tax " +
+                "ON tax.product_id = product.product_id " +
+                "   WHERE invoice_item.invoice_id = ?"
         return jdbcTemplate.query(sql, arrayOf(id), InvoiceResultSetExtractor())!!
     }
 }

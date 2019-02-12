@@ -4,7 +4,7 @@ import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
 
 data class Invoice(
-    var id: Int = 0,
+    var invoiceId: Int = 0,
 
     val customer: String,
 
