@@ -15,3 +15,4 @@ INSERT INTO TAX(product_id, tax_type, rate) VALUES(1 , 'CGST', 2);
 INSERT INTO TAX(product_id, tax_type, rate) VALUES(2 , 'VAT', 0.3);
 INSERT INTO TAX(product_id, tax_type, rate) VALUES(2 , 'GST', 0.02);
 INSERT INTO TAX(product_id, tax_type, rate) VALUES(3 , 'SalesTax', 1);
+INSERT INTO TAX(product_id, tax_type, rate) VALUES(3 , 'VAT', 2.3);

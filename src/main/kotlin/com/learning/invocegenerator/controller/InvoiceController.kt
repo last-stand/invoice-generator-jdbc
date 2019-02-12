@@ -19,4 +19,8 @@ class InvoiceController{
     @GetMapping("/{id}")
     fun getInvoiceById(@PathVariable id: Int) =
             invoiceRepository.findById(id)
+
+    @GetMapping("/tax")
+    fun getAllProductsWithTaxes() =
+            invoiceRepository.findAllProductWithTaxes()
 }
