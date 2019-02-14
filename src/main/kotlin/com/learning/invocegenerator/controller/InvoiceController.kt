@@ -14,11 +14,11 @@ class InvoiceController{
 
     @GetMapping(path = arrayOf("", "/"))
     fun getAllInvoices() =
-            invoiceRepository.findAll()
+            invoiceRepository.findAllInvoices()
 
     @GetMapping("/{id}")
     fun getInvoiceById(@PathVariable id: Int) =
-            invoiceRepository.findById(id)
+            invoiceRepository.findInvoiceById(id)
 
     @GetMapping("/tax")
     fun getAllProductsWithTaxes() =

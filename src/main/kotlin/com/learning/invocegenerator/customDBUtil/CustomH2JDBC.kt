@@ -1,4 +1,4 @@
-package com.learning.invocegenerator.`custom-db-util`
+package com.learning.invocegenerator.customDBUtil
 
 import java.sql.Connection
 import java.sql.DriverManager
@@ -51,7 +51,7 @@ class CustomH2JDBC {
                 result = statement.executeUpdate(sql,  Statement.RETURN_GENERATED_KEYS)
                 val keys = statement.getGeneratedKeys()
                 keys.last()
-                var lastKey = keys.getInt("id")
+                var lastKey = keys.getInt("invoiceItemId")
                 return lastKey
             } catch (e: Exception) {
                 e.printStackTrace()
