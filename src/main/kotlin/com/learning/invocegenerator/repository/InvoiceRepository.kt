@@ -8,11 +8,15 @@ import com.learning.invocegenerator.models.Tax
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.dao.DataAccessException
 import org.springframework.jdbc.core.JdbcTemplate
+import org.springframework.jdbc.core.PreparedStatementCreator
+import org.springframework.jdbc.core.PreparedStatementSetter
 import org.springframework.jdbc.core.ResultSetExtractor
-import org.springframework.jdbc.core.RowMapper
 import org.springframework.stereotype.Repository
+import java.sql.Connection
+import java.sql.PreparedStatement
 import java.sql.ResultSet
 import java.sql.SQLException
+import java.util.*
 
 
 @Repository
@@ -22,7 +26,8 @@ class InvoiceRepository {
     lateinit var jdbcTemplate: JdbcTemplate
 
     internal inner class TaxRowMapper {
-        fun mapRow(resultSet: ResultSet, rowNum: Int): Tax {
+
+        fun mapRow(resultSet: ResultSet): Tax {
             val tax = Tax(
                     taxId = resultSet.getInt("tax_id"),
                     taxType = resultSet.getString("tax_type"),
@@ -34,10 +39,10 @@ class InvoiceRepository {
     }
 
     internal inner class ProductRowMapper {
+        val taxRowMapper = TaxRowMapper()
 
-         fun mapRow(resultSet: ResultSet, rowNum: Int): Product {
-            val taxRowMapper = TaxRowMapper()
-            val tax = taxRowMapper.mapRow(resultSet, rowNum)
+         fun mapRow(resultSet: ResultSet): Product {
+            val tax = taxRowMapper.mapRow(resultSet)
             val taxList = mutableSetOf(tax)
 
             val product = Product(
@@ -52,11 +57,14 @@ class InvoiceRepository {
 
     internal inner class InvoiceItemRowMapper {
 
-         fun mapRow(resultSet: ResultSet, rowNum: Int): InvoiceItem {
-            val product = findProductWithTaxesById(resultSet.getInt("product_id"))
+         fun mapRow(resultSet: ResultSet, productList: List<Product>): InvoiceItem {
+            val product = DBUtils.getProductFromListById(
+                    productList,
+                    resultSet.getInt("product_id")
+            )
             return InvoiceItem(
                     invoiceItemId = resultSet.getInt("invoice_item_id"),
-                    product = product,
+                    product = product!!,
                     quantity = resultSet.getInt("quantity")
 
             )
@@ -65,11 +73,11 @@ class InvoiceRepository {
     }
 
     internal inner class InvoiceRowMapper  {
+        val invoiceItemRowMapper = InvoiceItemRowMapper()
 
-         fun mapRow(resultSet: ResultSet, rowNum: Int): Invoice {
-            val invoiceItemRowMapper = InvoiceItemRowMapper()
-            val invoiceItem = invoiceItemRowMapper.mapRow(resultSet, rowNum)
-            val invoiceItemList = mutableSetOf(invoiceItem)
+         fun mapRow(resultSet: ResultSet, productList: List<Product>): Invoice {
+             val invoiceItem = invoiceItemRowMapper.mapRow(resultSet, productList)
+             val invoiceItemList = mutableSetOf(invoiceItem)
             return Invoice(invoiceId= resultSet.getInt("invoice_id"),
                     customer = resultSet.getString("customer"),
                     date = resultSet.getString("date"),
@@ -79,46 +87,75 @@ class InvoiceRepository {
     }
 
     internal inner class InvoiceResultSetExtractor : ResultSetExtractor<List<Invoice>>{
+        val invoiceList = arrayListOf<Invoice>()
+        val invoiceRowMapper = InvoiceRowMapper()
+        val invoiceItemRowMapper = InvoiceItemRowMapper()
 
         @Throws(SQLException::class, DataAccessException::class)
         override fun extractData(resultSet: ResultSet): List<Invoice> {
-            val invoiceList = arrayListOf<Invoice>()
-            val invoiceRowMapper = InvoiceRowMapper()
-            val invoiceItemRowMapper = InvoiceItemRowMapper()
-            var row = 0
+            val productList = fetchProductsByIds(resultSet)
+
             while (resultSet.next()) {
                 val invoiceId = resultSet.getInt("invoice_id")
                 val invoice = DBUtils.getInvoiceFromListById(invoiceList, invoiceId)
                 if(invoice == null) {
-                    invoiceList.add(invoiceRowMapper.mapRow(resultSet, row++))
+                    invoiceList.add(invoiceRowMapper.mapRow(resultSet, productList))
                 }
                 else {
-                    invoice.invoiceItem.add(invoiceItemRowMapper.mapRow(resultSet, row++))
+                    invoice.invoiceItem.add(invoiceItemRowMapper.mapRow(resultSet, productList))
                 }
             }
+
+            resultSet.close()
             return invoiceList
+        }
+
+        private fun fetchProductsByIds(resultSet: ResultSet):  List<Product>{
+            resultSet.afterLast()
+            val productIds = mutableListOf<Int>()
+            while (resultSet.previous()) {
+                val productId = resultSet.getInt("product_id")
+                productIds.add(productId)
+            }
+
+            return findProductsWithTaxesById(productIds.toTypedArray())
         }
     }
 
     internal inner class ProductResultSetExtractor : ResultSetExtractor<List<Product>>{
+        val productList = arrayListOf<Product>()
+        val productRowMapper = ProductRowMapper()
+        val taxRowMapper = TaxRowMapper()
 
         @Throws(SQLException::class, DataAccessException::class)
         override fun extractData(resultSet: ResultSet): List<Product> {
-            val productList = arrayListOf<Product>()
-            val productRowMapper = ProductRowMapper()
-            val taxRowMapper = TaxRowMapper()
-            var row = 0
             while (resultSet.next()) {
                 val productId = resultSet.getInt("product_id")
                 val product = DBUtils.getProductFromListById(productList, productId)
                 if(product == null) {
-                    productList.add(productRowMapper.mapRow(resultSet, row++))
+                    productList.add(productRowMapper.mapRow(resultSet))
                 }
                 else {
-                    product.taxes.add(taxRowMapper.mapRow(resultSet,row++))
+                    product.taxes.add(taxRowMapper.mapRow(resultSet))
                 }
             }
             return productList
+        }
+    }
+
+    private fun getPreparedStatementCreator(sql: String): PreparedStatementCreator {
+        return object : PreparedStatementCreator {
+
+            @Throws(SQLException::class)
+            override fun createPreparedStatement(connection: Connection): PreparedStatement {
+                val statement = connection.prepareStatement(
+                        sql,
+                        ResultSet.TYPE_SCROLL_INSENSITIVE,
+                        ResultSet.CONCUR_READ_ONLY
+                )
+                return statement
+            }
+
         }
     }
 
@@ -129,7 +166,7 @@ class InvoiceRepository {
                 "   INNER JOIN invoice_item " +
                 "ON invoice.invoice_id=invoice_item.invoice_id " +
                 "   ORDER BY invoice.invoice_id"
-        return jdbcTemplate.query(sql, InvoiceResultSetExtractor())!!
+        return jdbcTemplate.query(getPreparedStatementCreator(sql), InvoiceResultSetExtractor())!!
     }
 
     fun findAllProductWithTaxes(): List<Product> {
@@ -141,14 +178,17 @@ class InvoiceRepository {
         return jdbcTemplate.query(sql, ProductResultSetExtractor())!!
     }
 
-    fun findProductWithTaxesById(product_id: Int): Product {
+    fun findProductsWithTaxesById(product_ids: Array<Int>): List<Product> {
+        val inClauseParams = Arrays.toString(product_ids).drop(1).dropLast(1)
         val sql = "SELECT  product.product_id, product.name as product_name, product.unit_price, " +
                 "tax.tax_id, tax.tax_type, tax.rate " +
                 "FROM product " +
                 "   INNER JOIN tax " +
                 "ON product.product_id = tax.product_id " +
-                "WHERE product.product_id = ?"
-        return jdbcTemplate.query(sql, arrayOf(product_id), ProductResultSetExtractor())!!.first()
+                "   INNER JOIN invoice_item " +
+                "ON product.product_id = invoice_item.product_id " +
+                "   WHERE product.product_id IN (" + inClauseParams + ")"
+        return jdbcTemplate.query(sql, ProductResultSetExtractor())!!
     }
 
     fun findInvoiceById(invoice_id: Int): List<Invoice> {
@@ -158,6 +198,10 @@ class InvoiceRepository {
                 "   INNER JOIN invoice_item " +
                 "ON invoice.invoice_id=invoice_item.invoice_id " +
                 "   WHERE invoice.invoice_id = ?"
-        return jdbcTemplate.query(sql, arrayOf(invoice_id), InvoiceResultSetExtractor())!!
+        return jdbcTemplate.query(
+                getPreparedStatementCreator(sql),
+                PreparedStatementSetter {ps: PreparedStatement -> ps.setInt(1, invoice_id) },
+                InvoiceResultSetExtractor()
+        )!!
     }
 }
