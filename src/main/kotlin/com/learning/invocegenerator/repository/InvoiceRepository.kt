@@ -118,7 +118,7 @@ class InvoiceRepository {
                 productIds.add(productId)
             }
 
-            return findProductsWithTaxesById(productIds.toTypedArray())
+            return findProductsWithTaxesById(productIds)
         }
     }
 
@@ -178,8 +178,8 @@ class InvoiceRepository {
         return jdbcTemplate.query(sql, ProductResultSetExtractor())!!
     }
 
-    fun findProductsWithTaxesById(product_ids: Array<Int>): List<Product> {
-        val inClauseParams = Arrays.toString(product_ids).drop(1).dropLast(1)
+    fun findProductsWithTaxesById(product_ids: List<Int>): List<Product> {
+        val inClauseTemplate = product_ids.joinToString {"?"}
         val sql = "SELECT  product.product_id, product.name as product_name, product.unit_price, " +
                 "tax.tax_id, tax.tax_type, tax.rate " +
                 "FROM product " +
@@ -187,8 +187,8 @@ class InvoiceRepository {
                 "ON product.product_id = tax.product_id " +
                 "   INNER JOIN invoice_item " +
                 "ON product.product_id = invoice_item.product_id " +
-                "   WHERE product.product_id IN (" + inClauseParams + ")"
-        return jdbcTemplate.query(sql, ProductResultSetExtractor())!!
+                "   WHERE product.product_id IN (" + inClauseTemplate + ")"
+        return jdbcTemplate.query(sql, product_ids.toTypedArray(), ProductResultSetExtractor())!!
     }
 
     fun findInvoiceById(invoice_id: Int): List<Invoice> {
